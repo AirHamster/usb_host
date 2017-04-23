@@ -162,19 +162,15 @@ int main(int argc, char **argv)
     printf( "Max packet size failed: reason %s (%d)\n", libusb_strerror(r), r );
     goto test_failed;
   } else {
-    printf( "Max packet size %d bytes\n", r );
+    /* printf( "Max packet size %d bytes\n", r ); */
   }
 
-#define BUFLEN 3 
+#define BUFLEN 4 
   uint8_t cmdbuf[BUFLEN];
-  uint8_t rw; 
+  uint8_t rw = 0; 
   uint8_t reg = 0;
   int value;
- int led; 
-  for( int i = 0; i < BUFLEN; ++i )
-  {
-    cmdbuf[i] = i;
-  }
+  int led; 
 
 if(argc <= 1) {
          printf("Parameters haven't been presented. Nothing to send \n");
@@ -187,46 +183,86 @@ if(argc == 3)
         printf("Trying to set PCS0 value...\n");
 	reg = 2;
 	sscanf(argv[2], "%x", &value);
-	printf("Value is: %d", value);
+	/* printf("Value is: %d", value); */
     }
     else if(!strcmp(argv[1], "-width0")) {
         printf("Trying to set PWM0 value...\n");
 	reg = 3;
 	sscanf(argv[2], "%x", &value);
-	printf("Value is: %d", value);
+	/* printf("Value is: %d", value); */
     }
     else if(!strcmp(argv[1], "-period1")) {
         printf("Trying to set PCS1 value...\n");
 	reg = 4;
 	sscanf(argv[2], "%x", &value);
-	printf("Value is: %d", value);
+	/* printf("Value is: %d", value); */
     }
     else if(!strcmp(argv[1], "-width1")){ 
         printf("Trying to set PWM1 value...\n");
 	reg = 5;
 	sscanf(argv[2], "%x", &value);
-	printf("Value is: %d", value);
-    }else{
-	    printf("Invalid arguments");
+	/* printf("Value is: %d", value); */
     }
-	}
-if (argc == 4){
-	if(!strcmp(argv[1], "led")){
-
-	sscanf(argv[2], "%d", &value);
-	reg = 6 + (value-1)/4;
-	sscanf(argv[3], "%d", &value);
-
-	}else{
-		printf("Invalid arguments");
-	}
+    else if (!strcmp(argv[1], "-led")){
+	sscanf(argv[2], "%x", &value);
+	printf("Trying to get led %d status...", value);
+	reg = 6;
 	}
 	cmdbuf[0] = rw;
 	cmdbuf[1] = reg;
 	cmdbuf[2] = value;
-  /* Transmit cmdbuf to endpoint 1 */
+  /* Transmit cmdbu3f to endpoint 1 */
+  r = libusb_bulk_transfer( stm_handle, ENDPOINT1, (unsigned char*) cmdbuf,
+                                BUFLEN-1, &completed, TIMEOUT );
+}
+	
+else if (argc == 4){
+	if(!strcmp(argv[1], "-led")){
+
+	sscanf(argv[2], "%d", &led);
+	reg = 6;
+	}
+	if (!strcmp(argv[3], "pwm0"))
+	{
+		value = 0;
+	}else if (!strcmp(argv[3], "pwm1"))
+	{
+		value = 1;
+	}
+	cmdbuf[0] = rw;
+	cmdbuf[1] = reg;
+	cmdbuf[2] = led;
+	cmdbuf[3] = value;
+  /* Transmit cmdbu3f to endpoint 1 */
   r = libusb_bulk_transfer( stm_handle, ENDPOINT1, (unsigned char*) cmdbuf,
                                 BUFLEN, &completed, TIMEOUT );
+	}else if(argc == 2){
+	rw = 0;
+    if(!strcmp(argv[1], "-period0")) {
+        printf("Trying to read PCS0 value...\n");
+	reg = 2;
+    }
+    else if(!strcmp(argv[1], "-width0")) {
+        printf("Trying to read PWM0 value...\n");
+	reg = 3;
+    }
+    else if(!strcmp(argv[1], "-period1")) {
+        printf("Trying to read PCS1 value...\n");
+	reg = 4;
+    }
+    else if(!strcmp(argv[1], "-width1")){ 
+        printf("Trying to read PWM1 value...\n");
+	reg = 5;
+    }
+	cmdbuf[0] = rw;
+	cmdbuf[1] = reg;
+  /* Transmit cmdbu3f to endpoint 1 */
+  r = libusb_bulk_transfer( stm_handle, ENDPOINT1, (unsigned char*) cmdbuf,
+                                BUFLEN-2, &completed, TIMEOUT );
+	}else{
+		printf("Invalid arguments");
+	}
+	
   if ( r < 0 ) {
     printf( "\nUnable to send the request command: %s (%d)\n", libusb_strerror(r), r );
     goto test_failed;
@@ -236,7 +272,8 @@ if (argc == 4){
   /* Receive data from endpoint 2 to rxbuf */
   r = libusb_bulk_transfer( stm_handle, ENDPOINT2, rxbuf, 
                                  RXBUFLEN, &completed, TIMEOUT );
-  printf( "Completed = %d\n", completed );
+  /* printf( "Completed = %d\n", completed ); */
+	printf("Response resieved: \n");
   if( r < 0 ) {
     printf( "\nBulk RX transfer failed: reason %s (%d)\n", libusb_strerror(r), r );
     goto test_failed;
@@ -245,7 +282,7 @@ if (argc == 4){
   /* Print received data */
   for( int i = 0; i < completed; ++i )
   {
-    printf( "[%d] = %u ", i, rxbuf[i] );
+    printf( "%d",  rxbuf[i] );
   }
   printf( "\n" );
         
@@ -261,7 +298,7 @@ if (argc == 4){
 
   r = libusb_interrupt_transfer( stm_handle, ENDPOINT3, &cmd,
                                           sizeof( cmd ), &completed, TIMEOUT );
-  printf( "Interrupt request status: %d, %d\n", r, completed );
+  /* printf( "Interrupt request status: %d, %d\n", r, completed ); */
   if( r < 0 ) {
     printf( "\nInterupt TX transfer failed: reason %s (%d)\n", libusb_strerror(r), r );
     goto test_failed;
