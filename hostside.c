@@ -204,8 +204,8 @@ if(argc == 3)
 	/* printf("Value is: %d", value); */
     }
     else if (!strcmp(argv[1], "-led")){
-	sscanf(argv[2], "%x", &value);
-	printf("Trying to get led %d status...", value);
+	sscanf(argv[2], "%d", &value);
+	printf("Trying to get led %d status...\n", value);
 	reg = 6;
 	}
 	cmdbuf[0] = rw;
@@ -280,12 +280,22 @@ else if (argc == 4){
   }
 
   /* Print received data */
+if((rxbuf[0] == 79) & (rxbuf[1] == 75))
+{
+	printf("OK\n");
+}else if ((reg == 6) & (rxbuf[0] ==2))
+{
+	printf("pwm0\n");
+}else if ((reg == 6) & (rxbuf[0]==3))
+{
+	printf("pwm1\n");
+}else{
   for( int i = 0; i < completed; ++i )
   {
     printf( "%d",  rxbuf[i] );
   }
   printf( "\n" );
-        
+}  
   free( rxbuf );
 
   /* Do interrupt request to endpoint 3 */
