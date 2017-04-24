@@ -32,7 +32,9 @@
 #define ENDPOINT1 0x01
 #define ENDPOINT2 0x82
 #define ENDPOINT3 0x3
+#define ENDPOINT4 0x83
 #define RXBUFLEN  1600
+#define TXTBUFLEN  1600
 
 #define TIMEOUT 300
 
@@ -122,7 +124,9 @@ int main(int argc, char **argv)
   libusb_device_handle * stm_handle = NULL;
 
   int completed = 0;
+  int txtcompleted = 0;
   unsigned char *rxbuf;
+  unsigned char *txtbuf;
 
   int r = 0;
 
@@ -152,6 +156,7 @@ int main(int argc, char **argv)
   }
 
   rxbuf = malloc( RXBUFLEN );
+  txtbuf = malloc( TXTBUFLEN );
   if( rxbuf == NULL ) {
     puts("Nomem");
     goto test_failed;
@@ -270,33 +275,31 @@ else if (argc == 4){
   }
 
   /* Receive data from endpoint 2 to rxbuf */
+  r = libusb_bulk_transfer( stm_handle, ENDPOINT4, txtbuf, 
+				 TXTBUFLEN, &txtcompleted, TIMEOUT );
+  /* Receive data from endpoint 2 to rxbuf */
   r = libusb_bulk_transfer( stm_handle, ENDPOINT2, rxbuf, 
-                                 RXBUFLEN, &completed, TIMEOUT );
-  /* printf( "Completed = %d\n", completed ); */
-	printf("Response resieved: \n");
+				 RXBUFLEN, &completed, TIMEOUT );
   if( r < 0 ) {
     printf( "\nBulk RX transfer failed: reason %s (%d)\n", libusb_strerror(r), r );
     goto test_failed;
   }
+	printf("Response resieved: \n");
 
+  for( int i = 0; i < txtcompleted; ++i )
+  {
+    printf( "%c",  txtbuf[i] );
+  }
+  printf( " " );
   /* Print received data */
-if((rxbuf[0] == 79) & (rxbuf[1] == 75))
-{
-	printf("OK\n");
-}else if ((reg == 6) & (rxbuf[0] ==2))
-{
-	printf("pwm0\n");
-}else if ((reg == 6) & (rxbuf[0]==3))
-{
-	printf("pwm1\n");
-}else{
   for( int i = 0; i < completed; ++i )
   {
     printf( "%d",  rxbuf[i] );
   }
   printf( "\n" );
-}  
+  
   free( rxbuf );
+  free( txtbuf );
 
   /* Do interrupt request to endpoint 3 */
   unsigned char cmd = 's';
@@ -304,7 +307,7 @@ if((rxbuf[0] == 79) & (rxbuf[1] == 75))
   if( r < 0 ) {
     printf( "\nClaim interface failed: reason %s (%d)\n", libusb_strerror(r), r );
     goto test_failed;
-  }
+  
 
   r = libusb_interrupt_transfer( stm_handle, ENDPOINT3, &cmd,
                                           sizeof( cmd ), &completed, TIMEOUT );
@@ -331,4 +334,5 @@ find_failed:
     printf( "Done\n" );
   }
   return r;
+}
 }
