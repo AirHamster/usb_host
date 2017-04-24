@@ -225,6 +225,7 @@ else if (argc == 4){
 	if(!strcmp(argv[1], "-led")){
 
 	sscanf(argv[2], "%d", &led);
+	printf("Trying to set LED %d mode...\n", led);
 	reg = 6;
 	}
 	if (!strcmp(argv[3], "pwm0"))
@@ -284,7 +285,7 @@ else if (argc == 4){
     printf( "\nBulk RX transfer failed: reason %s (%d)\n", libusb_strerror(r), r );
     goto test_failed;
   }
-	printf("Response resieved: \n");
+	printf("Response received: \n");
 
   for( int i = 0; i < txtcompleted; ++i )
   {
